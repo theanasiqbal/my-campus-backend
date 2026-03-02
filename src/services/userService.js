@@ -128,40 +128,83 @@ class UserService {
       throw new Error(error.message);
     }
 
+    // Also fetch student-specific fields
+    const { data: studentData } = await supabaseAdmin
+      .from("students")
+      .select("fullAddress, gender, birthDate")
+      .eq("id", userId)
+      .single();
+
     return {
       id: data.id,
       name: data.name,
       email: data.email,
       phone: data.phone,
       createdAt: data.created_at,
+      fullAddress: studentData?.fullAddress || null,
+      gender: studentData?.gender || null,
+      birthDate: studentData?.birthDate || null,
     };
   }
 
   // Update user profile
   async updateProfile(userId, updateData) {
-    const { name, email, phone } = updateData;
+    const { name, phone, fullAddress, gender, birthDate } = updateData;
 
-    const { data, error } = await supabaseAdmin
-      .from("users")
-      .update({
-        name: name || undefined,
-        email: email || undefined,
-        phone: phone || undefined,
-      })
-      .eq("id", userId)
-      .select()
-      .single();
+    // Build users update object (only shared fields)
+    const usersUpdate = {};
+    if (name !== undefined && name !== "") usersUpdate.name = name;
+    if (phone !== undefined && phone !== "") usersUpdate.phone = phone;
 
-    if (error) {
-      throw new Error(error.message);
+    // Update users table if there's anything to update
+    let updatedUser = null;
+    if (Object.keys(usersUpdate).length > 0) {
+      const { data, error } = await supabaseAdmin
+        .from("users")
+        .update(usersUpdate)
+        .eq("id", userId)
+        .select()
+        .single();
+
+      if (error) throw new Error(error.message);
+      updatedUser = data;
+    } else {
+      // Fetch current user data so we can return it
+      const { data, error } = await supabaseAdmin
+        .from("users")
+        .select("*")
+        .eq("id", userId)
+        .single();
+      if (error) throw new Error(error.message);
+      updatedUser = data;
+    }
+
+    // Build students update object (shared + student-only fields)
+    const studentsUpdate = {};
+    if (name !== undefined && name !== "") studentsUpdate.name = name;
+    if (phone !== undefined && phone !== "") studentsUpdate.phone = phone;
+    if (fullAddress !== undefined) studentsUpdate.fullAddress = fullAddress;
+    if (gender !== undefined) studentsUpdate.gender = gender;
+    if (birthDate !== undefined) studentsUpdate.birthDate = birthDate;
+
+    if (Object.keys(studentsUpdate).length > 0) {
+      const { error: studentError } = await supabaseAdmin
+        .from("students")
+        .update(studentsUpdate)
+        .eq("id", userId);
+
+      if (studentError) throw new Error(studentError.message);
     }
 
     return {
-      id: data.id,
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      createdAt: data.created_at,
+      id: updatedUser.id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      phone: updatedUser.phone,
+      createdAt: updatedUser.created_at,
+      fullAddress: fullAddress ?? null,
+      gender: gender ?? null,
+      birthDate: birthDate ?? null,
     };
   }
 
