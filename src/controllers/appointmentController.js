@@ -1,4 +1,4 @@
-const  supabase  = require("../config/supabase");
+const supabase = require("../config/supabase");
 
 // Create appointment (from BookConsultation2 -> Payments)
 exports.createAppointment = async (req, res) => {
@@ -44,9 +44,9 @@ exports.createAppointment = async (req, res) => {
     });
   } catch (error) {
     console.error('Create appointment error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      error: error.message
     });
   }
 };
@@ -72,9 +72,9 @@ exports.markAsPaid = async (req, res) => {
     });
   } catch (error) {
     console.error('Payment error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      error: error.message
     });
   }
 };
@@ -86,7 +86,7 @@ exports.getStudentAppointments = async (req, res) => {
 
     const { data, error } = await supabase
       .from('appointments')
-      .select('*, counsellors(*)')
+      .select('*, counsellors(*), counsellor_ratings(id)')
       .eq('student_id', studentId)
       .eq('status', 'paid')
       .order('created_at', { ascending: false });
@@ -98,9 +98,9 @@ exports.getStudentAppointments = async (req, res) => {
     });
   } catch (error) {
     console.error('Get appointments error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      error: error.message
     });
   }
 };
@@ -125,9 +125,9 @@ exports.getCounsellorAppointments = async (req, res) => {
     });
   } catch (error) {
     console.error('Get appointments error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      error: error.message
     });
   }
 };
@@ -151,9 +151,9 @@ exports.getAppointmentById = async (req, res) => {
     });
   } catch (error) {
     console.error('Get appointment error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      error: error.message
     });
   }
 };
@@ -192,9 +192,9 @@ exports.getCounsellorDashboard = async (req, res) => {
     });
   } catch (error) {
     console.error('Get dashboard error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      error: error.message
     });
   }
 };
