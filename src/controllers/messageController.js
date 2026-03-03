@@ -1,15 +1,15 @@
-const supabase  = require('../config/supabase');
+const supabase = require('../config/supabase');
 
 // Get all messages for an appointment
 exports.getMessages = async (req, res) => {
   try {
-    const { appointmentId } = req.params;
+    const { conversationId } = req.params;
     const { after } = req.query;
 
     let query = supabase
       .from('messages')
       .select('*')
-      .eq('appointment_id', appointmentId)
+      .eq('conversation_id', conversationId)
       .order('created_at', { ascending: true });
 
     if (after) {
@@ -26,9 +26,9 @@ exports.getMessages = async (req, res) => {
     });
   } catch (error) {
     console.error('Get messages error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      error: error.message
     });
   }
 };
@@ -36,13 +36,13 @@ exports.getMessages = async (req, res) => {
 // Send a message
 exports.sendMessage = async (req, res) => {
   try {
-    const { appointmentId } = req.params;
+    const { conversationId } = req.params;
     const { senderId, senderType, message } = req.body;
 
     const { data, error } = await supabase
       .from('messages')
       .insert([{
-        appointment_id: appointmentId,
+        conversation_id: conversationId,
         sender_id: senderId,
         sender_type: senderType,
         message,
@@ -59,9 +59,9 @@ exports.sendMessage = async (req, res) => {
     });
   } catch (error) {
     console.error('Send message error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      error: error.message
     });
   }
 };
@@ -69,7 +69,7 @@ exports.sendMessage = async (req, res) => {
 // Mark messages as read
 exports.markMessagesAsRead = async (req, res) => {
   try {
-    const { appointmentId } = req.params;
+    const { conversationId } = req.params;
     const { userId } = req.body; // The user who is reading the messages
 
     // Mark all messages in this appointment as read
@@ -77,14 +77,14 @@ exports.markMessagesAsRead = async (req, res) => {
     const { data, error } = await supabase
       .from('messages')
       .update({ read: true })
-      .eq('appointment_id', appointmentId)
+      .eq('conversation_id', conversationId)
       .neq('sender_id', userId) // Don't mark own messages as read
       .eq('read', false) // Only update unread messages
       .select('*');
 
     if (error) throw error;
 
-    console.log(`✅ Marked ${data.length} messages as read in appointment ${appointmentId}`);
+    console.log(`✅ Marked ${data.length} messages as read in conversation ${conversationId}`);
 
     res.status(200).json({
       success: true,
@@ -92,9 +92,9 @@ exports.markMessagesAsRead = async (req, res) => {
     });
   } catch (error) {
     console.error('Mark messages as read error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      error: error.message
     });
   }
 };
@@ -102,13 +102,13 @@ exports.markMessagesAsRead = async (req, res) => {
 // Get unread count for an appointment
 exports.getUnreadCount = async (req, res) => {
   try {
-    const { appointmentId } = req.params;
+    const { conversationId } = req.params;
     const { userId } = req.query; // Current user
 
     const { data, error, count } = await supabase
       .from('messages')
       .select('*', { count: 'exact', head: true })
-      .eq('appointment_id', appointmentId)
+      .eq('conversation_id', conversationId)
       .eq('read', false)
       .neq('sender_id', userId); // Don't count own messages
 
@@ -120,9 +120,9 @@ exports.getUnreadCount = async (req, res) => {
     });
   } catch (error) {
     console.error('Get unread count error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      error: error.message
     });
   }
 };
@@ -130,12 +130,12 @@ exports.getUnreadCount = async (req, res) => {
 // Get last message for an appointment
 exports.getLastMessage = async (req, res) => {
   try {
-    const { appointmentId } = req.params;
+    const { conversationId } = req.params;
 
     const { data, error } = await supabase
       .from('messages')
       .select('*')
-      .eq('appointment_id', appointmentId)
+      .eq('conversation_id', conversationId)
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
@@ -157,9 +157,9 @@ exports.getLastMessage = async (req, res) => {
     });
   } catch (error) {
     console.error('Get last message error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message 
+    res.status(500).json({
+      success: false,
+      error: error.message
     });
   }
 };

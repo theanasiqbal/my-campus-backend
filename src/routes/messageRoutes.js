@@ -1,17 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const { 
-  getMessages, 
+const {
+  getMessages,
   sendMessage,
   markMessagesAsRead,
   getUnreadCount,
   getLastMessage
 } = require('../controllers/messageController');
 
-router.get('/:appointmentId/messages', getMessages);
-router.post('/:appointmentId/messages', sendMessage);
-router.patch('/:appointmentId/messages/read', markMessagesAsRead);
-router.get('/:appointmentId/messages/unread-count', getUnreadCount);
-router.get('/:appointmentId/messages/last', getLastMessage);
+router.get('/:conversationId/messages', getMessages);
+router.post('/:conversationId/messages', sendMessage);
+router.patch('/:conversationId/messages/read', markMessagesAsRead);
+router.get('/:conversationId/messages/unread-count', getUnreadCount);
+router.get('/:conversationId/messages/last', getLastMessage);
 
 module.exports = router;

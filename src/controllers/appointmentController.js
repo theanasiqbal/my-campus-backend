@@ -65,6 +65,29 @@ exports.markAsPaid = async (req, res) => {
 
     if (error) throw error;
 
+    // Ensure a conversation exists for this student and counsellor pair
+    if (data && data.student_id && data.counsellor_id) {
+      const { data: convData, error: convError } = await supabase
+        .from('conversations')
+        .select('id')
+        .eq('student_id', data.student_id)
+        .eq('counsellor_id', data.counsellor_id)
+        .single();
+
+      // If no conversation found (PGRST116 means zero rows), create one
+      if (convError && convError.code === 'PGRST116') {
+        const { error: insertError } = await supabase
+          .from('conversations')
+          .insert([{
+            student_id: data.student_id,
+            counsellor_id: data.counsellor_id
+          }]);
+        if (insertError) {
+          console.error('Error creating conversation:', insertError);
+        }
+      }
+    }
+
     res.status(200).json({
       success: true,
       message: 'Payment successful',

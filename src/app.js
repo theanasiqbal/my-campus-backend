@@ -7,6 +7,7 @@ const userRoutes = require('./routes/userRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const ratingRoutes = require('./routes/ratingRoutes');
+const chatRoutes = require('./routes/chatRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -36,7 +37,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/counsellors', counsellorRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/appointments', appointmentRoutes);
-app.use('/api/appointments', messageRoutes);
+app.use('/api/conversations', messageRoutes); // We mounts message endpoints relative to conversationId
+app.use('/api/conversations', chatRoutes);    // Mount inbox paths
 app.use('/api/ratings', ratingRoutes);
 
 // Health check
@@ -48,13 +50,13 @@ app.get('/health', (req, res) => {
 io.on('connection', (socket) => {
   console.log('✅ User connected:', socket.id);
 
-  socket.on('join_chat', (appointmentId) => {
-    socket.join(appointmentId);
-    console.log(`👤 User ${socket.id} joined room: ${appointmentId}`);
+  socket.on('join_chat', (conversationId) => {
+    socket.join(conversationId);
+    console.log(`👤 User ${socket.id} joined room: ${conversationId}`);
   });
 
   socket.on('send_message', async (data) => {
-    const { appointmentId, senderId, senderType, message } = data;
+    const { conversationId, senderId, senderType, message } = data;
 
     try {
       const { createClient } = require('@supabase/supabase-js');
@@ -66,7 +68,7 @@ io.on('connection', (socket) => {
       const { data: savedMessage, error } = await supabase
         .from('messages')
         .insert([{
-          appointment_id: appointmentId,
+          conversation_id: conversationId,
           sender_id: senderId,
           sender_type: senderType,
           message,
@@ -79,7 +81,7 @@ io.on('connection', (socket) => {
 
       console.log('💬 Message saved:', savedMessage.id);
 
-      io.to(appointmentId).emit('receive_message', savedMessage);
+      io.to(conversationId).emit('receive_message', savedMessage);
     } catch (error) {
       console.error('❌ Socket send message error:', error);
       socket.emit('message_error', { error: error.message });
@@ -88,7 +90,7 @@ io.on('connection', (socket) => {
 
   // New event: Mark messages as read
   socket.on('mark_as_read', async (data) => {
-    const { appointmentId, userId } = data;
+    const { conversationId, userId } = data;
 
     try {
       const { createClient } = require('@supabase/supabase-js');
@@ -100,25 +102,25 @@ io.on('connection', (socket) => {
       await supabase
         .from('messages')
         .update({ read: true })
-        .eq('appointment_id', appointmentId)
+        .eq('conversation_id', conversationId)
         .neq('sender_id', userId)
         .eq('read', false);
 
       // Notify others in the room that messages were read
-      socket.to(appointmentId).emit('messages_read', { appointmentId });
+      socket.to(conversationId).emit('messages_read', { conversationId });
     } catch (error) {
       console.error('❌ Mark as read error:', error);
     }
   });
 
   socket.on('typing', (data) => {
-    const { appointmentId, senderId, senderType } = data;
-    socket.to(appointmentId).emit('user_typing', { senderId, senderType });
+    const { conversationId, senderId, senderType } = data;
+    socket.to(conversationId).emit('user_typing', { senderId, senderType });
   });
 
   socket.on('stop_typing', (data) => {
-    const { appointmentId } = data;
-    socket.to(appointmentId).emit('user_stopped_typing');
+    const { conversationId } = data;
+    socket.to(conversationId).emit('user_stopped_typing');
   });
 
   socket.on('disconnect', () => {
