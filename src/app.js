@@ -6,6 +6,7 @@ const counsellorRoutes = require('./routes/counsellorRoutes');
 const userRoutes = require('./routes/userRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const messageRoutes = require('./routes/messageRoutes');
+const ratingRoutes = require('./routes/ratingRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -36,6 +37,7 @@ app.use('/api/counsellors', counsellorRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/appointments', messageRoutes);
+app.use('/api/ratings', ratingRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
